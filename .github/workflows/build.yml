@@ -55,18 +55,14 @@ jobs:
           scripts/build-macos.sh ${{ matrix.arch }}
 
       # --- Windows: MSVC toolchain + MSYS2 build tools -----------------------
-      # NOTE: these third-party actions should be pinned to a commit SHA per
-      # GitHub's security-hardening guidance before this repo cuts real
-      # releases. Left on version tags in the scaffold rather than committing
-      # guessed SHAs that would break CI.
       - name: Set up MSVC (${{ matrix.arch }})
         if: matrix.os == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1   # TODO: pin to commit SHA
+        uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch == 'x86_64' && 'x64' || 'amd64_arm64' }}
       - name: Set up MSYS2
         if: matrix.os == 'windows'
-        uses: msys2/setup-msys2@v2     # TODO: pin to commit SHA
+        uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
           install: make nasm diffutils
