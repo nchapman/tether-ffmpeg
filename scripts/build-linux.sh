@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build a static LGPL FFmpeg for Linux. Intended to run inside the build
-# container (docker/Dockerfile.linux), which provides the toolchain + libva/libdrm.
+# Build a static LGPL FFmpeg for Linux. Runs directly on the runner; CI installs
+# the toolchain (build-essential, nasm, pkg-config) + libva/libdrm-dev first.
 #
 # Usage: scripts/build-linux.sh <arch>      arch ∈ { x86_64, arm64 }
 set -euo pipefail
@@ -18,7 +18,9 @@ log "configuring ffmpeg (linux/${ARCH})"
 SRC="${SOURCES_DIR}/ffmpeg"
 OBJ="${BUILD_DIR}/linux-${ARCH}/obj"
 mkdir -p "${OBJ}"
-mapfile -t FLAGS < <(configure_flags linux "${ARCH}")
+# Portable array fill (avoid `mapfile`/`readarray`, absent in bash 3.x).
+FLAGS=()
+while IFS= read -r _flag; do FLAGS+=("${_flag}"); done < <(configure_flags linux "${ARCH}")
 ( cd "${OBJ}" && "${SRC}/configure" --prefix="${PREFIX}" "${FLAGS[@]}" )
 
 log "building ffmpeg (linux/${ARCH})"

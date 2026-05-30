@@ -23,15 +23,16 @@ releases), but with two deliberate differences:
 
 | OS | Arch | Runner | Hardware codecs enabled |
 |----|------|--------|--------------------------|
-| linux | x86_64 | `ubuntu-22.04` (builds in an Ubuntu 20.04 container) | VAAPI |
-| linux | arm64 | `ubuntu-22.04-arm` (container) | VAAPI |
-| macos | arm64 | `macos-14` | VideoToolbox |
-| windows | x86_64 | `windows-2022` (MSVC) | NVENC, AMF, QSV (libvpl), Media Foundation, D3D11VA |
-| windows | arm64 | `windows-2022` (MSVC cross) | Media Foundation, D3D11VA (no vendor encoders exist on arm64) |
+| linux | x86_64 | `ubuntu-24.04` | VAAPI |
+| linux | arm64 | `ubuntu-24.04-arm` | VAAPI |
+| macos | arm64 | `macos-15` | VideoToolbox |
+| windows | x86_64 | `windows-2025` (MSVC) | NVENC, AMF, QSV (libvpl), Media Foundation, D3D11VA |
+| windows | arm64 | `windows-2025` (MSVC cross) | Media Foundation, D3D11VA (no vendor encoders exist on arm64) |
 
-The Linux container is pinned to Ubuntu 20.04 to set a low glibc floor so the
-artifacts run on newer distros. macOS x86_64 is a one-line matrix addition if an
-Intel-mac target ever returns.
+Builds run directly on the latest LTS/GA runner images — no container. Linux
+artifacts therefore require the runner's glibc (Ubuntu 24.04 → glibc 2.39) or
+newer; to support an older distro, move the Linux target to an older LTS runner.
+macOS x86_64 is a one-line matrix addition if an Intel-mac target ever returns.
 
 ## Versioning
 
@@ -69,10 +70,10 @@ places ⇒ no drift.
 Each target builds with one script (CI calls these directly):
 
 ```sh
-# Linux (inside the container; see docker/Dockerfile.linux)
+# Linux (needs: build-essential, nasm, pkg-config, libva-dev, libdrm-dev)
 scripts/build-linux.sh   x86_64    # or arm64
 
-# macOS (native on Apple Silicon; needs `brew install nasm`)
+# macOS (native on Apple Silicon)
 scripts/build-macos.sh   arm64
 
 # Windows (from an MSVC developer prompt with MSYS2 make/nasm on PATH)

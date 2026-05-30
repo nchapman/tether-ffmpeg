@@ -18,7 +18,9 @@ log "configuring ffmpeg (macos/${ARCH})"
 SRC="${SOURCES_DIR}/ffmpeg"
 OBJ="${BUILD_DIR}/macos-${ARCH}/obj"
 mkdir -p "${OBJ}"
-mapfile -t FLAGS < <(configure_flags macos "${ARCH}")
+# Portable array fill — macOS ships bash 3.2, which has no `mapfile`/`readarray`.
+FLAGS=()
+while IFS= read -r _flag; do FLAGS+=("${_flag}"); done < <(configure_flags macos "${ARCH}")
 ( cd "${OBJ}" && "${SRC}/configure" --prefix="${PREFIX}" "${FLAGS[@]}" )
 
 log "building ffmpeg (macos/${ARCH})"

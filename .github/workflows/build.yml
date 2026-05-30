@@ -29,30 +29,29 @@ jobs:
       fail-fast: false     # one target failing shouldn't cancel the others
       matrix:
         include:
-          - { os: linux,   arch: x86_64, runner: ubuntu-22.04 }
-          - { os: linux,   arch: arm64,  runner: ubuntu-22.04-arm }
-          - { os: macos,   arch: arm64,  runner: macos-14 }
-          - { os: windows, arch: x86_64, runner: windows-2022 }
-          - { os: windows, arch: arm64,  runner: windows-2022 }
+          - { os: linux,   arch: x86_64, runner: ubuntu-24.04 }
+          - { os: linux,   arch: arm64,  runner: ubuntu-24.04-arm }
+          - { os: macos,   arch: arm64,  runner: macos-15 }
+          - { os: windows, arch: x86_64, runner: windows-2025 }
+          - { os: windows, arch: arm64,  runner: windows-2025 }
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false   # build jobs never push; don't leave the token in git config
 
-      # --- Linux: build inside the old-glibc container -----------------------
+      # --- Linux: build directly on the runner (latest LTS) ------------------
       - name: Build (linux)
         if: matrix.os == 'linux'
         run: |
-          docker build -t tether-ffmpeg-linux -f docker/Dockerfile.linux .
-          docker run --rm -v "$PWD:/src" -w /src tether-ffmpeg-linux \
-            scripts/build-linux.sh ${{ matrix.arch }}
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential nasm pkg-config libva-dev libdrm-dev
+          scripts/build-linux.sh ${{ matrix.arch }}
 
       # --- macOS: native build ----------------------------------------------
       - name: Build (macos)
         if: matrix.os == 'macos'
-        run: |
-          brew install nasm
-          scripts/build-macos.sh ${{ matrix.arch }}
+        run: scripts/build-macos.sh ${{ matrix.arch }}
 
       # --- Windows: MSVC toolchain + MSYS2 build tools -----------------------
       - name: Set up MSVC (${{ matrix.arch }})
@@ -83,7 +82,7 @@ jobs:
     name: publish release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write   # elevated only here, to create the Release
