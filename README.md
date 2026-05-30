@@ -92,3 +92,7 @@ in particular:
 - **arm64** targets (linux + windows-cross) need their toolchains exercised in CI.
 - The `versions.env` refs are starting points; pin each to an exact tag/commit
   once validated against the FFmpeg 8.1 API that Tether's rsmpeg pin expects.
+- The two third-party CI actions (`ilammy/msvc-dev-cmd`, `msys2/setup-msys2`)
+  are on version tags and should be pinned to commit SHAs before cutting real
+  releases (GitHub security-hardening guidance). Official `actions/*` are left on
+  major-version tags, which GitHub maintains.
