@@ -33,6 +33,18 @@ $Prefix  = Join-Path $Build 'prefix'
 $Dist    = Join-Path $RepoRoot 'dist'
 New-Item -ItemType Directory -Force -Path $Sources, $Build, $Prefix, $Dist | Out-Null
 
+# --- Enter the MSVC developer environment ------------------------------------
+# Microsoft's own Enter-VsDevShell (ships with Visual Studio on the runner) —
+# no third-party action, no Node runtime to deprecate. It sets cl/link/INCLUDE/
+# LIB for this PowerShell session; the cmake and MSYS2 `bash` child processes
+# invoked below inherit that environment. arm64 builds cross from the x64 host.
+$vsArch  = if ($Arch -eq 'x86_64') { 'x64' } else { 'arm64' }
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+$vsPath  = & $vswhere -latest -products * -property installationPath
+Import-Module (Join-Path $vsPath 'Common7\Tools\Microsoft.VisualStudio.DevShell.dll')
+Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation `
+  -DevCmdArguments "-arch=$vsArch -host_arch=x64 -no_logo"
+
 function Fetch-Git($Name, $Repo, $Ref) {
   $dest = Join-Path $Sources $Name
   if (Test-Path (Join-Path $dest '.git')) { return }
