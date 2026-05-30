@@ -1,0 +1,10 @@
+# Build trees and outputs — everything is reproducible from source + versions.env.
+/build/
+/dist/
+/sources/
+*.tar.xz
+*.sha256
+
+# Editor / OS noise
+.DS_Store
+*.swp

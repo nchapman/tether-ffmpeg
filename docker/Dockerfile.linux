@@ -1,0 +1,25 @@
+# Build image for the Linux FFmpeg artifacts.
+#
+# Ubuntu 20.04 sets the glibc floor (2.31) so the static FFmpeg links into a
+# tether binary that still runs on contributors' newer distros. Building on a
+# newer base would pin too-recent a glibc and break older targets.
+#
+# This image is arch-neutral: build it (and run build-linux.sh) on an x86_64
+# runner for linux-x86_64, and on an arm64 runner for linux-arm64.
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        git \
+        nasm \
+        yasm \
+        pkg-config \
+        xz-utils \
+        # VAAPI: linked at build time, resolved against system libva at runtime.
+        libva-dev \
+        libdrm-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
