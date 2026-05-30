@@ -26,8 +26,8 @@ releases), but with two deliberate differences:
 | linux | x86_64 | `ubuntu-24.04` | VAAPI |
 | linux | arm64 | `ubuntu-24.04-arm` | VAAPI |
 | macos | arm64 | `macos-15` | VideoToolbox |
-| windows | x86_64 | `windows-2025` (MSVC) | NVENC, AMF, QSV (libvpl), Media Foundation, D3D11VA |
-| windows | arm64 | `windows-2025` (MSVC cross) | Media Foundation, D3D11VA (no vendor encoders exist on arm64) |
+| windows | x86_64 | `windows-2025-vs2026` (MSVC) | NVENC, AMF, QSV (libvpl), Media Foundation, D3D11VA |
+| windows | arm64 | `windows-2025-vs2026` (MSVC cross) | Media Foundation, D3D11VA (no vendor encoders exist on arm64) |
 
 Builds run directly on the latest LTS/GA runner images — no container. Linux
 artifacts therefore require the runner's glibc (Ubuntu 24.04 → glibc 2.39) or
