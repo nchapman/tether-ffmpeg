@@ -100,12 +100,21 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
-      contents: write   # elevated only here, to create the Release
+      contents: write       # elevated only here, to create the Release
+      id-token: write       # mint the Sigstore OIDC token for attestation
+      attestations: write   # record the build-provenance attestation
     steps:
       - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
+      # Signed SLSA build provenance for the release tarballs, tying each to this
+      # repo + commit + workflow run. Consumers verify with:
+      #   gh attestation verify <file> --repo ${{ github.repository }}
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/*.tar.xz
       # Use the built-in gh CLI instead of a third-party release action — one
       # fewer supply-chain dependency, and it ships on the runner.
       - name: Create release

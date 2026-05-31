@@ -149,7 +149,7 @@ try {
   Bash "export PKG_CONFIG_PATH='$PrefixUnix/lib/pkgconfig'; '$SrcUnix/configure' --prefix='$PrefixUnix' $($flags -join ' ')"
 } catch {
   # configure failures are usually a single failed feature check buried in its log;
-  # surface the tail (and a direct pkgconf probe) so CI shows the real cause.
+  # surface the tail so CI shows the real cause (full log is uploaded as an artifact).
   Write-Host '===== ffbuild/config.log (tail 200) ====='
   Bash "tail -200 '$ObjUnix/ffbuild/config.log' 2>&1 || echo 'NO config.log found'"
   throw
@@ -167,6 +167,9 @@ if (-not (Test-Path (Join-Path $Prefix 'include\libavcodec\avcodec.h'))) {
 # --- Package -----------------------------------------------------------------
 $name = "tether-ffmpeg-$env:TETHER_FFMPEG_VERSION-windows-$Arch-lgpl-static"
 tar -C $Build -cJf (Join-Path $Dist "$name.tar.xz") 'prefix'
-(Get-FileHash (Join-Path $Dist "$name.tar.xz") -Algorithm SHA256).Hash.ToLower() |
-  Out-File -Encoding ascii (Join-Path $Dist "$name.tar.xz.sha256")
+# Emit the same "<hash>  <file>\n" (two spaces, LF) format as the unix
+# `shasum -a 256` so `sha256sum -c` / `shasum -c` verifies every platform's
+# checksum uniformly. WriteAllText avoids Out-File's CRLF + BOM.
+$hash = (Get-FileHash (Join-Path $Dist "$name.tar.xz") -Algorithm SHA256).Hash.ToLower()
+[System.IO.File]::WriteAllText((Join-Path $Dist "$name.tar.xz.sha256"), "$hash  $name.tar.xz`n")
 Write-Host "[tether-ffmpeg] wrote dist\$name.tar.xz"
