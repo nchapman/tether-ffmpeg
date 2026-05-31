@@ -84,12 +84,18 @@ Outputs land in `dist/`.
 
 ## Status
 
-This is the initial scaffold. The build logic and CI matrix are in place; the
-configure flags and version pins still need a first green CI run to validate —
-in particular:
+All five targets build green in CI and produce valid artifacts (FFmpeg static
+libs + headers), including the high-risk ones:
 
-- **Windows MSVC + static** is the highest-risk target (FFmpeg `--toolchain=msvc`
-  producing `.lib` the Rust MSVC toolchain links cleanly). Prove this first.
-- **arm64** targets (linux + windows-cross) need their toolchains exercised in CI.
-- The `versions.env` refs are starting points; pin each to an exact tag/commit
-  once validated against the FFmpeg 8.1 API that Tether's rsmpeg pin expects.
+- **Windows MSVC + static** (x86_64 and arm64-cross) works: `--toolchain=msvc`
+  produces `.lib` the Rust MSVC toolchain links. The MSVC build is driven from
+  MSYS2's own bash entered via `Enter-VsDevShell`; see `scripts/build-windows.ps1`
+  for the platform-specific gotchas it handles (coreutils `link.exe` shadowing,
+  `pkgconf` naming, `CHERE_INVOKING`, libvpl's advapi32/ole32 static deps).
+- **arm64** (linux + windows-cross) toolchains are exercised in CI.
+
+Remaining hardening before a first tagged release:
+
+- The `versions.env` refs are mostly tags already; double-check each against the
+  FFmpeg 8.1 API that Tether's rsmpeg pin expects (FFmpeg 8.1 needs AMF ≥ 1.4.36,
+  already pinned). Consider moving any moving-tag refs to exact commit SHAs.

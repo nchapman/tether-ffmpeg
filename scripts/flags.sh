@@ -41,6 +41,10 @@ EOF
       # toolchain. -MD keeps the CRT dynamic, matching Rust's default.
       echo "--toolchain=msvc"
       echo "--extra-cflags=-MD"
+      # MSYS2 ships pkg-config as the `pkgconf` binary (no `pkg-config` name), so
+      # point configure at it explicitly — otherwise every .pc lookup (libvpl,
+      # ffnvcodec) silently fails with "pkg-config not found".
+      echo "--pkg-config=pkgconf"
       echo "--enable-mediafoundation"
       echo "--enable-d3d11va"
       echo "--enable-dxva2"
@@ -48,11 +52,23 @@ EOF
         # x64-only vendor encoders. None exist on Windows arm64.
         echo "--enable-nvenc"
         echo "--enable-amf"
+        # libvpl's static link needs advapi32/ole32 (see build-windows.ps1,
+        # which patches vpl.pc so pkg-config advertises them).
         echo "--enable-libvpl"
+        # The amf_capture filter (vsrc_amf.c) includes AMF's DisplayCapture.h,
+        # a C++-only header (unguarded `extern "C"`) that FFmpeg compiles as C →
+        # syntax error. Tether captures on its own and only needs the AMF
+        # *encoders*, so drop this filter rather than the whole AMF feature.
+        echo "--disable-filter=amf_capture"
       elif [[ "${arch}" == "arm64" ]]; then
         echo "--enable-cross-compile"
         echo "--arch=aarch64"
         echo "--target-os=win32"
+        # MSVC arm64 has no GNU assembler, and FFmpeg's aarch64 asm path needs
+        # gas-preprocessor + armasm64 (fragile to wire up in CI). Tether decodes/
+        # encodes only through hardware codecs, so FFmpeg's software SIMD is moot —
+        # disable asm rather than carry the gas-preprocessor dependency.
+        echo "--disable-asm"
       fi
       ;;
     *)
