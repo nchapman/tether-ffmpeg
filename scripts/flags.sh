@@ -38,9 +38,16 @@ EOF
       ;;
     windows)
       # MSVC toolchain so the static .lib match the Rust x86_64-pc-windows-msvc
-      # toolchain. -MD keeps the CRT dynamic, matching Rust's default.
+      # toolchain. -MD keeps the CRT dynamic, matching Rust's default (and the
+      # VC runtime DLLs we ship). cl.exe defaults to the *static* CRT (/MT) with
+      # no /M flag, so the flag must cover BOTH the C objects (--extra-cflags)
+      # and the C++ ones (--extra-cxxflags): e.g. the gfxcapture filter's
+      # vsrc_gfxcapture_winrt.cpp, whose lone /MT object otherwise drags in
+      # libcpmt/LIBCMT and collides (LNK2038/LNK2005) with every /MD object when
+      # the static libs are linked into Rust.
       echo "--toolchain=msvc"
       echo "--extra-cflags=-MD"
+      echo "--extra-cxxflags=-MD"
       # MSYS2 ships pkg-config as the `pkgconf` binary (no `pkg-config` name), so
       # point configure at it explicitly — otherwise every .pc lookup (libvpl,
       # ffnvcodec) silently fails with "pkg-config not found".
