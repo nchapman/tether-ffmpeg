@@ -33,6 +33,16 @@ EOF
       ;;
     macos)
       echo "--enable-videotoolbox"
+      # GitHub's macos runners ship Homebrew libx11/libxcb, which FFmpeg's
+      # configure auto-detects and uses to enable the x11grab/xcbgrab screen
+      # capture indevs. That bakes the runner's `-L/opt/homebrew/Cellar/...`
+      # paths and `-lX11 -lxcb*` into libavutil.pc/libavdevice.pc, so any
+      # consumer's static link then depends on those exact Homebrew packages
+      # being installed (and makes the artifact non-reproducible w.r.t. runner
+      # brew state). Tether captures via ScreenCaptureKit and never touches
+      # these indevs, so disable both — the build stays OS-framework-only.
+      echo "--disable-xlib"
+      echo "--disable-libxcb"
       [[ "${arch}" == "arm64" ]] && echo "--enable-cross-compile" && echo "--arch=arm64"
       [[ "${arch}" == "x86_64" ]] && echo "--arch=x86_64"
       ;;
