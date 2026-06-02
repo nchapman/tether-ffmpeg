@@ -93,8 +93,22 @@ function Fetch-Git($Name, $Repo, $Ref) {
   git -C $dest checkout --quiet $Ref
 }
 
-# --- Build-time dependencies (x86_64 vendor encoders only) -------------------
+# --- Build-time dependencies -------------------------------------------------
 Fetch-Git 'ffmpeg' $env:FFMPEG_REPO $env:FFMPEG_REF
+
+# Opus audio codec (both arches — it's software, unlike the x64-only vendor
+# encoders below). Static CMake build into the prefix; the install emits
+# lib\pkgconfig\opus.pc, which FFmpeg's --enable-libopus check finds via the
+# PKG_CONFIG_PATH set before configure. arm64 cross-builds inherit cl's target
+# arch from the arm64 VS dev shell entered above.
+Fetch-Git 'opus' $env:LIBOPUS_REPO $env:LIBOPUS_REF
+cmake -S (Join-Path $Sources 'opus') -B (Join-Path $Build 'opus') -G Ninja `
+      -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF `
+      -DOPUS_BUILD_TESTING=OFF -DOPUS_BUILD_PROGRAMS=OFF `
+      "-DCMAKE_INSTALL_PREFIX=$Prefix"
+cmake --build (Join-Path $Build 'opus') --target install
+
+# x64-only vendor encoders (nvenc/amf/qsv). None exist on Windows arm64.
 if ($Arch -eq 'x86_64') {
   # nvenc + amf are header-only: install their headers into the prefix so
   # FFmpeg's configure finds ffnvcodec.pc / AMF/core/Factory.h.

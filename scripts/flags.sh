@@ -3,8 +3,10 @@
 #
 # Two invariants hold across every target:
 #   * LGPL only — no --enable-gpl / --enable-nonfree, no libx264 / libx265.
-#     Tether encodes/decodes exclusively through hardware codecs, all of which
+#     Tether's *video* path runs exclusively through hardware codecs, all of which
 #     are LGPL-compatible (vaapi, videotoolbox, nvenc, amf, qsv, mediafoundation).
+#     The one software codec is libopus (Opus audio): BSD-licensed, so still
+#     LGPL-compatible, built static from source and enabled on every target.
 #   * Static libs — the final tether-host/tether-client binaries embed FFmpeg;
 #     only stable system pieces (libva, OS frameworks, MF) stay dynamic.
 #
@@ -12,7 +14,9 @@
 configure_flags() {
   local os="$1" arch="$2"
 
-  # Common base: LGPL, static, lib-only.
+  # Common base: LGPL, static, lib-only. libopus (Opus audio) is the one software
+  # codec and is built/installed into the prefix on every target, so it's enabled
+  # here rather than per-platform; FFmpeg's configure finds it via opus.pc.
   cat <<'EOF'
 --disable-gpl
 --disable-nonfree
@@ -22,6 +26,7 @@ configure_flags() {
 --disable-programs
 --disable-doc
 --disable-debug
+--enable-libopus
 EOF
 
   case "${os}" in

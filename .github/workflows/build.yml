@@ -45,7 +45,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential nasm pkg-config libva-dev libdrm-dev
+            build-essential cmake nasm pkg-config libva-dev libdrm-dev
           scripts/build-linux.sh ${{ matrix.arch }}
 
       # --- macOS: native build ----------------------------------------------

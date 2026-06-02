@@ -13,8 +13,12 @@ LGPL-only, statically linkable **FFmpeg 8.1** builds for every platform
 | windows | x86_64 | NVENC, AMF, QSV, Media Foundation, D3D11VA |
 | windows | arm64 | Media Foundation, D3D11VA |
 
+Every target also bundles **Opus audio** (encode + decode) via libopus, built
+static from source — the one software codec alongside the hardware video codecs.
+
 Each tarball holds static `lib*.a` / `*.lib`, headers, and `lib/pkgconfig/*.pc`.
-No GPL — no `--enable-gpl`, no `libx264` / `libx265`.
+No GPL — no `--enable-gpl`, no `libx264` / `libx265`; libopus is BSD-licensed and
+stays within the LGPL-only invariant.
 
 ## Use a build
 
@@ -41,7 +45,7 @@ the `-tether.N` suffix for a packaging-only change (flags, dep bumps).
 ## Build locally
 
 ```sh
-scripts/build-linux.sh    x86_64   # or arm64; needs nasm, pkg-config, libva-dev, libdrm-dev
+scripts/build-linux.sh    x86_64   # or arm64; needs cmake, nasm, pkg-config, libva-dev, libdrm-dev
 scripts/build-macos.sh    arm64
 scripts/build-windows.ps1 -Arch x86_64   # from a VS dev shell with MSYS2; or arm64
 ```
