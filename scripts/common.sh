@@ -28,6 +28,39 @@ fetch_git() {
   ( cd "${dest}" && git checkout --quiet "${ref}" )
 }
 
+# Build static libopus from a pinned git tag and install it into <prefix>.
+# Opus is software (not a system framework), so we vendor + build it like libvpl
+# on Windows: static, PIC (to match FFmpeg's --enable-pic), no tests/programs. The
+# CMake install emits prefix/lib/pkgconfig/opus.pc, which FFmpeg's --enable-libopus
+# check then locates via PKG_CONFIG_PATH (set by the build scripts before configure).
+#
+# Usage: build_libopus <os> <arch> <prefix>
+build_libopus() {
+  local os="$1" arch="$2" prefix="$3"
+  fetch_git opus "${LIBOPUS_REPO}" "${LIBOPUS_REF}"
+
+  local src="${SOURCES_DIR}/opus"
+  local obj="${BUILD_DIR}/${os}-${arch}/opus"
+  # macOS may cross-compile (e.g. x86_64 on an arm64 runner); pin the slice so the
+  # static lib's arch matches the FFmpeg build. Linux builds native, so no flag.
+  local osx_arch=()
+  [[ "${os}" == "macos" ]] && osx_arch+=("-DCMAKE_OSX_ARCHITECTURES=${arch}")
+
+  log "building libopus (${os}/${arch})"
+  # ${arr[@]+"${arr[@]}"} guards the empty-array case: under bash 3.2 (macOS's
+  # /bin/bash) with `set -u`, a bare "${osx_arch[@]}" on an empty array is a fatal
+  # unbound-variable error. The guard expands to nothing when osx_arch is empty.
+  cmake -S "${src}" -B "${obj}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DOPUS_BUILD_TESTING=OFF \
+    -DOPUS_BUILD_PROGRAMS=OFF \
+    -DCMAKE_INSTALL_PREFIX="${prefix}" \
+    ${osx_arch[@]+"${osx_arch[@]}"}
+  cmake --build "${obj}" --target install --parallel
+}
+
 # Package a finished install prefix into dist/<artifact>.tar.xz + .sha256.
 package_prefix() {
   local prefix="$1" os="$2" arch="$3"
