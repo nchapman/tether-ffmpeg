@@ -59,6 +59,21 @@ build_libopus() {
     -DCMAKE_INSTALL_PREFIX="${prefix}" \
     ${osx_arch[@]+"${osx_arch[@]}"}
   cmake --build "${obj}" --target install --parallel
+
+  # Static libopus references libm (exp/log/... in the celt/silk DSP), but lists
+  # -lm under Libs.private, not Libs. FFmpeg's libopus check links its test program
+  # with the *public* Libs only (we don't pass --pkg-config-flags=--static, matching
+  # the libvpl .pc convention), so on Linux — where libm is a separate lib — the test
+  # link fails with undefined math symbols and configure reports the catch-all
+  # "opus not found using pkg-config". Surface Libs.private onto the public Libs line
+  # so the test (and any static consumer) links. No-op on macOS (libm is in libSystem)
+  # but harmless. Portable across BSD/GNU sed: no -i, '|' delimiter, write-then-move.
+  local pc="${prefix}/lib/pkgconfig/opus.pc"
+  local priv
+  priv="$(sed -n 's/^Libs\.private:[[:space:]]*//p' "${pc}")"
+  if [[ -n "${priv}" ]]; then
+    sed "s|^\(Libs:.*\)\$|\1 ${priv}|" "${pc}" > "${pc}.tmp" && mv "${pc}.tmp" "${pc}"
+  fi
 }
 
 # Package a finished install prefix into dist/<artifact>.tar.xz + .sha256.
