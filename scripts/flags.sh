@@ -31,10 +31,20 @@ EOF
 
   case "${os}" in
     linux)
-      # Tether's Linux host path is VAAPI only. libva/libdrm are linked from the
-      # build container and resolve against the system libs at final link time.
+      # Tether's Linux host path is VAAPI (the universal baseline) plus NVENC on
+      # NVIDIA hosts. libva/libdrm are linked from the build container and resolve
+      # against the system libs at final link time.
       echo "--enable-vaapi"
       echo "--enable-libdrm"
+      # NVENC + the CUDA hwcontext. ffnvcodec.pc (installed into the prefix by
+      # build-linux.sh) satisfies configure; both dlopen their runtime libs
+      # (libnvidia-encode.so / libcuda.so) on an actual NVIDIA host, so this adds no
+      # build-time toolkit dependency and stays within the LGPL/static invariant.
+      # --enable-cuda provides AV_HWDEVICE_TYPE_CUDA, which the host uses to import a
+      # capture DMA-BUF into CUDA zero-copy and feed *_nvenc. Enabled on both arches —
+      # NVENC exists on ARM NVIDIA too; the runtime libs load only when a GPU is present.
+      echo "--enable-nvenc"
+      echo "--enable-cuda"
       ;;
     macos)
       echo "--enable-videotoolbox"
@@ -73,6 +83,12 @@ EOF
       if [[ "${arch}" == "x86_64" ]]; then
         # x64-only vendor encoders. None exist on Windows arm64.
         echo "--enable-nvenc"
+        # CUDA hwcontext (AV_HWDEVICE_TYPE_CUDA), for parity with the Linux build.
+        # ffnvcodec is already installed for --enable-nvenc and the runtime dlopens
+        # libcuda, so this needs no extra toolkit. Today's Windows NVENC path feeds
+        # D3D11 textures and doesn't require it; enabling it keeps the encoder matrix
+        # symmetric across platforms and unblocks a future CUDA-based input path.
+        echo "--enable-cuda"
         echo "--enable-amf"
         # libvpl's static link needs advapi32/ole32 (see build-windows.ps1,
         # which patches vpl.pc so pkg-config advertises them).
