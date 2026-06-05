@@ -83,6 +83,12 @@ EOF
       if [[ "${arch}" == "x86_64" ]]; then
         # x64-only vendor encoders. None exist on Windows arm64.
         echo "--enable-nvenc"
+        # CUDA hwcontext (AV_HWDEVICE_TYPE_CUDA), for parity with the Linux build.
+        # ffnvcodec is already installed for --enable-nvenc and the runtime dlopens
+        # libcuda, so this needs no extra toolkit. Today's Windows NVENC path feeds
+        # D3D11 textures and doesn't require it; enabling it keeps the encoder matrix
+        # symmetric across platforms and unblocks a future CUDA-based input path.
+        echo "--enable-cuda"
         echo "--enable-amf"
         # libvpl's static link needs advapi32/ole32 (see build-windows.ps1,
         # which patches vpl.pc so pkg-config advertises them).
