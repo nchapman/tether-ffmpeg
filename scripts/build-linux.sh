@@ -17,6 +17,16 @@ mkdir -p "${PREFIX}"
 # in place when configure runs the --enable-libopus check.
 build_libopus linux "${ARCH}" "${PREFIX}"
 
+# NVENC + CUDA hwcontext: install the ffnvcodec headers (nv-codec-headers) into the
+# prefix so FFmpeg's configure finds ffnvcodec.pc and enables --enable-nvenc /
+# --enable-cuda (see flags.sh). Header-only — FFmpeg dlopens libnvidia-encode.so /
+# libcuda.so at runtime, so the build needs no CUDA toolkit and the artifact stays
+# LGPL/static. Installed on both arches: the headers are arch-independent and NVENC
+# exists on ARM NVIDIA (Jetson / Grace-Hopper) too; the runtime libs are only ever
+# loaded on an actual NVIDIA host. Mirrors the Windows build (build-windows.ps1).
+fetch_git nv-codec-headers "${NV_CODEC_HEADERS_REPO}" "${NV_CODEC_HEADERS_REF}"
+make -C "${SOURCES_DIR}/nv-codec-headers" install "PREFIX=${PREFIX}"
+
 fetch_git ffmpeg "${FFMPEG_REPO}" "${FFMPEG_REF}"
 
 log "configuring ffmpeg (linux/${ARCH})"

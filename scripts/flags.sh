@@ -31,10 +31,20 @@ EOF
 
   case "${os}" in
     linux)
-      # Tether's Linux host path is VAAPI only. libva/libdrm are linked from the
-      # build container and resolve against the system libs at final link time.
+      # Tether's Linux host path is VAAPI (the universal baseline) plus NVENC on
+      # NVIDIA hosts. libva/libdrm are linked from the build container and resolve
+      # against the system libs at final link time.
       echo "--enable-vaapi"
       echo "--enable-libdrm"
+      # NVENC + the CUDA hwcontext. ffnvcodec.pc (installed into the prefix by
+      # build-linux.sh) satisfies configure; both dlopen their runtime libs
+      # (libnvidia-encode.so / libcuda.so) on an actual NVIDIA host, so this adds no
+      # build-time toolkit dependency and stays within the LGPL/static invariant.
+      # --enable-cuda provides AV_HWDEVICE_TYPE_CUDA, which the host uses to import a
+      # capture DMA-BUF into CUDA zero-copy and feed *_nvenc. Enabled on both arches —
+      # NVENC exists on ARM NVIDIA too; the runtime libs load only when a GPU is present.
+      echo "--enable-nvenc"
+      echo "--enable-cuda"
       ;;
     macos)
       echo "--enable-videotoolbox"
